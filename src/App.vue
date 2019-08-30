@@ -5,7 +5,7 @@
         <div>
             <ul>
                 <li v-for="(e, i) in eventResult" :key="i">
-                    {{e}}
+                    <EventCard :event="e"/>
                 </li>
             </ul>
         </div>
@@ -15,59 +15,61 @@
 <script lang="ts">
 import { Tracer, Analyze } from 'thor-tracer'
 import Params from './components/params.vue'
+import EventCard from './components/eventCard.vue'
 import { Component, Vue } from 'vue-property-decorator'
 import { getTokens } from './tokens'
 import { abi } from 'thor-devkit'
 
 @Component({
     components: {
-        Params
+        Params,
+        EventCard
     }
 })
 export default class App extends Vue {
+    get eventResult() {
+        return this.eventList.map(item => {
+            return {
+                ...item,
+                ...this.blocks[item.blockId],
+                name: this.tokensObj[item.address].name,
+                icon: `https://vechain.github.io/token-registry/assets/${this.tokensObj[item.address].icon}`
+            }
+        })
+    }
     private tokens: any[] = []
+    private tokensObj: any = {}
 
     private tracer?: Tracer
-    private async beforeCreate() {
-        const net = connex.thor.genesis.id === '0x00000000851caf3cfdb6e899cf5958bfb1ac3413d346d43539627e6be7ec1b4a' ? 'main' : 'test'
-        this.tokens = await getTokens(net)
-    }
 
     private eventList: any[] = []
 
     private blocks: any = {}
 
     private eventAbi = new abi.Event({
-        "anonymous": false,
-        "inputs": [
+        anonymous: false,
+        inputs: [
             {
-                "indexed": true,
-                "name": "_from",
-                "type": "address"
+                indexed: true,
+                name: '_from',
+                type: 'address'
             },
             {
-                "indexed": true,
-                "name": "_to",
-                "type": "address"
+                indexed: true,
+                name: '_to',
+                type: 'address'
             },
             {
-                "indexed": false,
-                "name": "_value",
-                "type": "uint256"
+                indexed: false,
+                name: '_value',
+                type: 'uint256'
             }
         ],
-        "name": "Transfer",
-        "type": "event"
+        name: 'Transfer',
+        type: 'event'
     })
-    get eventResult() {
-        return this.eventList.map(item => {
-            return {
-                ...item,
-                ...this.blocks[item.blockId]
-            }
-        })
-    }
-    getCondations(data: any) {
+
+    public getCondations(data: any) {
         const tokens: string[] = data.tokens
         const address: string[] = data.accounts
         this.tracer = new Tracer({
@@ -77,7 +79,9 @@ export default class App extends Vue {
             eventFilter: (item) => {
                 if (tokens.indexOf(item.address) > -1) {
                     const dec = this.eventAbi.decode(item.data, item.topics)
-                    return (address.indexOf(dec['_from']) > -1 || address.indexOf(dec['_to']) > -1)
+                    return address.length
+                        ? (address.indexOf(dec._from) > -1 || address.indexOf(dec._to) > -1)
+                        : true
                 } else {
                     return false
                 }
@@ -90,7 +94,7 @@ export default class App extends Vue {
                 return {
                     address: item.address,
                     txId: item.txId,
-                    blockId: blockId,
+                    blockId,
                     decode: this.eventAbi.decode(item.data, item.topics)
                 }
             })
@@ -98,16 +102,30 @@ export default class App extends Vue {
             this.eventList = [...this.eventList, ...temp]
         })
 
-        this.tracer.events.on('confirm', (data: any) => {
+        this.tracer.events.on('confirm', (list: Tracer.confirmed[]) => {
             this.blocks = {}
-            data.forEach((item: any) => {
-                this.blocks[item.blockId] = {
-                    isTrunk: item.isTrunk,
-                    confirm: item.confirm
+            list.forEach((item: Tracer.confirmed) => {
+                if (!item.isTrunk || item.confirm < this.tracer!.CheckNum) {
+                    this.blocks[item.blockID] = {
+                        isTrunk: item.isTrunk,
+                        confirm: item.confirm
+                    }
                 }
+            })
+            const blockIDs = Object.keys(this.blocks)
+            this.eventList = this.eventList.filter(item => {
+                return blockIDs.indexOf(item.blockId) > -1
             })
         })
         this.tracer.start()
+    }
+    private async beforeCreate() {
+        const net = connex.thor.genesis.id === '0x00000000851caf3cfdb6e899cf5958bfb1ac3413d346d43539627e6be7ec1b4a' ? 'main' : 'test'
+        this.tokens = await getTokens(net)
+
+        this.tokens.forEach(item => {
+            this.tokensObj[item.address] = item
+        })
     }
 }
 </script>

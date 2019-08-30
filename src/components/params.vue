@@ -30,7 +30,7 @@ export default class Params extends Vue {
       })
     }
 
-    checkCondation() {
+    public checkCondation() {
       this.$emit('check', {tokens: this.tokenAddress, accounts: this.accounts})
     }
 }

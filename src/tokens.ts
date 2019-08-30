@@ -1,7 +1,6 @@
 
 const apiHost = 'https://vechain.github.io/token-registry'
 export const getTokens = async (net: 'main' | 'test') => {
-
   const resp = await fetch(`${apiHost}/${net}.json`)
   if (resp.status !== 200) {
     return
