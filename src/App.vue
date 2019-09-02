@@ -141,7 +141,7 @@ export default class App extends Vue {
         })
 
         this.tracer.events.on('stop', (result: any) => {
-            console.log(result)
+            console.log('stop: ', result)
         })
 
         this.tracer.events.on('confirm', (list: Tracer.confirmed[]) => {
