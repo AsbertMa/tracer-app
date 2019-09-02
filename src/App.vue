@@ -3,7 +3,7 @@
         <h1 class="is-size-2">Thor-tracer</h1>
         <div class="columns">
             <div class="column is-4">
-                <Params @check="getCondations" :tokens="tokens" @stop="" />
+                <Params @check="getCondations" :tokens="tokens" @stop="stopTracer" />
             </div>
             <div class="column is-7">
                 <table class="table is-fullwidth is-narrow">
