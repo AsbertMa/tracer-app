@@ -73,7 +73,7 @@ export default class App extends Vue {
     private tracer?: Tracer
 
     private eventList: any[] = []
-    private checkNum = 50
+    private checkNum = 12
 
     private blocks: any = {}
 
