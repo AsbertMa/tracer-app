@@ -1,5 +1,6 @@
 <template>
     <form style="width: 500px; margin-left: 20px">
+        <div class="has-text-left has-text-weight-bold">Tokens:</div>
         <div class="columns is-multiline">
             <div
                 class="column has-text-left is-one-third"
@@ -17,6 +18,7 @@
                 </label>
             </div>
         </div>
+        <div class="has-text-left has-text-weight-bold">Address (split by ','):</div>
         <textarea
             class="textarea"
             :disabled="disabled"
@@ -32,20 +34,19 @@
             type="button"
             @click="checkCondation"
         >OK</button>
-        <button
-            v-if="disabled"
-            class="button is-primary"
-            type="button"
-            @click="stop"
-        >Stop</button>
+        <button v-if="disabled" class="button is-primary" type="button" @click="stop">Stop</button>
     </form>
 </template>
 <script lang="ts">
-import { Vue, Component, Prop } from 'vue-property-decorator'
+import { Vue, Component, Prop, Watch } from 'vue-property-decorator'
 @Component
 export default class Params extends Vue {
     @Prop(Array)
     private tokens?: any[]
+
+    @Prop({ default: true })
+    private stoped?: boolean
+
     private address: string = ''
     private tokenAddress: string[] = []
 
@@ -57,6 +58,10 @@ export default class Params extends Vue {
         })
     }
 
+    @Watch('stoped')
+    public onStopChange() {
+        this.disabled = !this.stoped
+    }
     public stop() {
         this.$emit('stop')
     }
